@@ -1,3 +1,4 @@
 static/audio/*
 static/img/*
 static/video/*
+**/__pycache__/
