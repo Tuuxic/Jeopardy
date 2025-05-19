@@ -1,19 +1,19 @@
-class State:
+from pydantic import BaseModel 
+
+class State(BaseModel):
+    round: int 
+    categories1: list[str]
+    categories2: list[str]
+    answered: list[int]
 
     def __init__(self, round: int = 1, categories1: list[str] = [], categories2: list[str] = [], answered: list[int] = []):
-        self.round: int = round
-        self.categories1: list[str] = categories1
-        self.categories2: list[str] = categories2
-        self.answered: list[int] = answered
+        super().__init__(round=round, categories1=categories1, categories2=categories2, answered=answered)
 
-    def get_dictionary(self):
-        return {
-            "round": self.round,
-            "categories1": self.categories1,
-            "categories2": self.categories2,
-            "answered": self.answered
-        }
 
     def reset(self):
         self.__init__()
+
+
+    def to_json(self):
+        return self.model_dump()
     

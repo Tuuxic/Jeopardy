@@ -70,6 +70,26 @@ QUESTION_ANSWER_TEMPLATE = '''
         <div class="badge category">{{q.category}}</div>
         <div class="badge value">{{q.value}}</div>
         <div>{{q.question}}</div>
+
+
+        {% if q.image %}
+            <img src="{{ url_for('static', filename=q.image) }}" alt="Question Image">
+        {% endif %}
+
+        {% if q.video %}
+            <video controls>
+            <source src="{{ url_for('static', filename=q.video) }}" type="video/mp4">
+            Your browser does not support the video tag.
+            </video>
+        {% endif %} 
+
+        {% if q.audio %}
+            <audio controls>
+            <source src="{{ url_for('static', filename=q.audio) }}" type="audio/mpeg">
+            Your browser does not support the audio tag.
+            </audio>
+        {% endif %} 
+
         <p style="margin-top:20px;"><strong>Antwort:</strong> {{q.answer}}</p><a href="{{url_for('game_board')}}"
             class="back-link">Zurück</a>
     </div>

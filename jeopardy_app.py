@@ -1,45 +1,8 @@
-"""
-Jeopardy Game Application mit 2 Runden, Zufalls-Kategorien, answered-greyout, auto-refresh, Reset & Unanswer per Doppelklick
-
-Runde 1: 5 zufällige Kategorien mit originalen Punkten
-Runde 2: 5 neue Kategorien (ohne Wiederholung) mit doppelten Punkten
-
-Features:
-- Admin: Fragen & Spieler verwalten
-- Admin: Spiel zurücksetzen (inkl. Spieler löschen)
-- Game: bereits beantwortete Fragen grau
-- Game: per Doppelklick beantwortete Fragen wieder freigeben
-- Auto-Refresh der Game-Seite alle 10 Sekunden
-
-State in `state.json`:
-- round: int
-- categories1: List[str]
-- categories2: List[str]
-- answered: List[int]
-
-Requirements:
-- Python 3.x
-- Flask (`pip install flask`)
-
-Usage:
-1. Lege ab:
-   - jeopardy_app.py
-   - questions.json (initial `[]`)
-   - players.json   (initial `[]`)
-   - state.json     (initial leer oder `[]`)
-2. `python3 jeopardy_app.py`
-3. Admin: http://<deine-domain>/admin
-4. Game:  http://<deine-domain>/game
-"""
 import random
-from flask import Flask, request, redirect, url_for, render_template_string
+from flask import Flask, request, redirect, url_for
 from data_manager import DataManager
 from model.player import Player
 from model.question import Question
-from templates.admin_template import ADMIN_TEMPLATE
-from templates.game_template import GAME_TEMPLATE
-from templates.question_answer_template import QUESTION_ANSWER_TEMPLATE
-from templates.question_template import QUESTION_TEMPLATE
 from view_manager import ViewManager
 
 app = Flask(__name__)
@@ -60,7 +23,6 @@ def admin_index():
 def add_question():
     qs = data_manager.questions 
     nid = max([q.id for q in qs], default=0) + 1
-    print(f"New question ID: {request.form["question"]}")
     question = Question(
         id=nid,
         category=request.form['category'],
@@ -107,29 +69,42 @@ def reset_game():
 # --- Game Routes ---
 @app.route('/game')
 def game_board():
+    # TODO: Completely rework this function 
+
     qs = data_manager.questions
     st = data_manager.state
-    print(f"Questions: {qs}")
 
     all_cats = sorted({q.category for q in qs})
     if st.categories1 and any(c not in all_cats for c in st.categories1):
+        # If any category in categories1 is not in all_cats, reset the game 
         data_manager.reset_state()
+
     if st.round == 1 and not st.categories1:
-        # TODO: Rework
+        # If no categories are set for round 1, select random categories
         st.categories1 = random.sample(all_cats, min(5, len(all_cats)))
         data_manager.save_state()
+
+
     if st.round == 1:
+        # Check if all questions in categories1 are answered
         ids1 = [q.id for q in qs if q.category in st.categories1]
         if set(ids1) <= set(st.answered):
+            # If all questions are answered, move to round 2
             st.round = 2
             st.answered = []
             rem = [c for c in all_cats if c not in st.categories1]
             st.categories2 = random.sample(rem, min(5, len(rem)))
             data_manager.save_state()
+
+    # Get the current categories for the current round 
     cats = st.categories1 if st.round == 1 else st.categories2
+    # Get the current points for the current questions 
     vals = sorted({q.value for q in qs if q.category in cats})
+    # Set the multiplier for the current round
     mult = 1 if st.round == 1 else 2
+    # Create the board with questions
     board = {cat: {val: None for val in vals} for cat in cats}
+    # Fill the board with questions
     for q in qs:
         if q.category in cats and q.value in vals:
             board[q.category][q.value] = q
@@ -147,11 +122,15 @@ def game_board():
 def show_question(qid):
     qs = data_manager.questions
     q = next((x for x in qs if x.id == qid), None)
+
+    # Check if the question exists
     if not q:
         return "Frage nicht gefunden", 404
+    
     if request.method == 'POST':
         data_manager.add_answered(qid)
         return view_manager.displayQuestionAnswerView(question = q) 
+
     return view_manager.displayQuestionView(question = q) 
 
 @app.route('/game/unanswer/<int:qid>', methods=['POST'])

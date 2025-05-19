@@ -1,4 +1,7 @@
 static/audio/*
 static/img/*
 static/video/*
+config/*.json
+state/*.json
 **/__pycache__/
+.venv/
