@@ -57,7 +57,7 @@ class DataManager:
         self.save_questions()
 
     def delete_question(self, question_id: int) -> None:
-        self.questions = [q for q in self.questions if q['id'] != question_id]
+        self.questions = [q for q in self.questions if q.id != question_id]
         self.save_questions()
 
 
